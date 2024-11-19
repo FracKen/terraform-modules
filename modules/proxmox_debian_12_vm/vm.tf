@@ -1,7 +1,6 @@
 resource "proxmox_virtual_environment_vm" "debian_template" {
   count     = 1
   node_name = element(data.proxmox_virtual_environment_nodes.available_nodes.names, random_integer.index.result)
-  # name            = "datacore-${count.index + 1}.complex.unimatrix.ooo"
   name            = "${var.vm_name}-${count.index + 1}.${var.dns_suffix}"
   template        = false
   vm_id           = replace("${var.vm_ip_address_prefix}${count.index}", ".", "")
