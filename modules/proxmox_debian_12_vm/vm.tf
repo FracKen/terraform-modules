@@ -1,5 +1,5 @@
 resource "proxmox_virtual_environment_vm" "debian_template" {
-  count     = 1
+  count     = var.vm_count
   node_name = element(data.proxmox_virtual_environment_nodes.available_nodes.names, random_integer.index.result)
   name            = "${var.vm_name}-${count.index + 1}.${var.dns_suffix}"
   template        = false
