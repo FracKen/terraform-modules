@@ -17,7 +17,7 @@ resource "proxmox_virtual_environment_file" "debian_vendor_config" {
   datastore_id = local.datastore_snippets
 
   source_raw {
-    data      = file("debian-vendor-config.yml")
+    data      = file("${path.module}/debian-vendor-config.yml")
     file_name = "debian-vendor-config.yml"
   }
 }
