@@ -1,16 +1,16 @@
 resource "proxmox_virtual_environment_vm" "debian_template" {
-  count     = var.vm_count
-  node_name = element(data.proxmox_virtual_environment_nodes.available_nodes.names, random_integer.index.result)
+  count           = var.vm_count
+  node_name       = element(data.proxmox_virtual_environment_nodes.available_nodes.names, random_integer.index.result)
   name            = "${var.vm_name}-${count.index + 1}.${var.dns_suffix}"
   template        = false
   vm_id           = replace("${var.vm_ip_address_prefix}${count.index}", ".", "")
   machine         = "q35"
-  started         = false
+  started         = var.start_on_deploy
   tablet_device   = false
   stop_on_destroy = true
   migrate         = true
   bios            = "ovmf"
-  on_boot         = true
+  on_boot         = var.start_on_boot
 
   agent {
     enabled = true
@@ -21,8 +21,8 @@ resource "proxmox_virtual_environment_vm" "debian_template" {
   }
 
   cpu {
-    cores   = 2
-    sockets = 2
+    cores   = var.cpu_cores
+    sockets = 1
     type    = "x86-64-v2-AES"
   }
 
@@ -31,7 +31,7 @@ resource "proxmox_virtual_environment_vm" "debian_template" {
     file_id      = proxmox_virtual_environment_download_file.debian_cloud_image.id
     interface    = "scsi0"
     ssd          = true
-    # file_format  = "raw"
+    size         = var.os_disk_size
   }
 
   scsi_hardware = "virtio-scsi-pci"
@@ -44,9 +44,9 @@ resource "proxmox_virtual_environment_vm" "debian_template" {
   }
 
   vga {
-    # type = "serial0"
-    type   = "virtio"
-    memory = 8
+    type = "serial0"
+    # type   = "virtio"
+    # memory = 8
   }
 
   serial_device {
@@ -54,8 +54,8 @@ resource "proxmox_virtual_environment_vm" "debian_template" {
   }
 
   memory {
-    dedicated = 2048
-    floating  = 2048
+    dedicated = var.vm_memory
+    floating  = var.vm_memory
   }
 
   efi_disk {
@@ -71,7 +71,7 @@ resource "proxmox_virtual_environment_vm" "debian_template" {
 
   startup {
     order      = 0
-    up_delay   = 30
+    up_delay   = 2
     down_delay = 0
   }
 
@@ -80,13 +80,13 @@ resource "proxmox_virtual_environment_vm" "debian_template" {
     interface    = "scsi1"
 
     dns {
-      domain = var.dns_suffix
+      domain  = var.dns_suffix
       servers = var.dns_servers
     }
     user_account {
       username = var.cloudinit_username
       password = var.cloudinit_password
-      keys = var.cloudinit_ssh_keys
+      keys     = var.cloudinit_ssh_keys
     }
     ip_config {
       ipv4 {
@@ -95,5 +95,12 @@ resource "proxmox_virtual_environment_vm" "debian_template" {
       }
     }
     vendor_data_file_id = proxmox_virtual_environment_file.debian_vendor_config.id
+  }
+
+  lifecycle {
+    ignore_changes = [
+      startup,
+      on_boot
+    ]
   }
 }
